@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MovieDraft</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f; --bg2: #13131a; --bg3: #1c1c26;
+    --accent: #e8c84a; --accent2: #c4a030;
+    --text: #f0ece0; --text2: #9a9480;
+    --border: rgba(232,200,74,0.15);
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --radius: 8px; --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; }
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+  .app-header { display:flex; align-items:center; gap:12px; padding:18px 28px; border-bottom:1px solid var(--border); background:var(--bg2); }
+  .logo { font-family:var(--font-display); font-size:28px; color:var(--accent); letter-spacing:2px; }
+  .logo span { color:var(--text2); }
+  .header-room { margin-left:auto; font-size:13px; color:var(--text2); }
+  .header-room strong { color:var(--accent); font-family:var(--font-display); letter-spacing:2px; font-size:18px; }
+
+  /* LOBBY */
+  #lobby { align-items:center; justify-content:center; padding:40px 20px; }
+  .lobby-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:40px; width:100%; max-width:520px; }
+  .lobby-title { font-family:var(--font-display); font-size:48px; color:var(--accent); letter-spacing:4px; margin-bottom:4px; }
+  .lobby-sub { color:var(--text2); font-size:14px; margin-bottom:32px; }
+  .field-group { margin-bottom:18px; }
+  .field-group label { display:block; font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:1px; margin-bottom:7px; }
+  .field-group input { width:100%; padding:12px 16px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:var(--font-body); font-size:15px; outline:none; transition:border-color 0.2s; }
+  .field-group input:focus { border-color:var(--accent); }
+  .btn { padding:12px 24px; border-radius:var(--radius); border:none; cursor:pointer; font-family:var(--font-body); font-size:15px; font-weight:600; transition:all 0.15s; }
+  .btn-primary { background:var(--accent); color:#0a0a0f; width:100%; padding:14px; font-size:16px; }
+  .btn-primary:hover { background:var(--accent2); }
+  .btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+  .btn-secondary { background:var(--bg3); color:var(--text); border:1px solid var(--border); }
+  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-sm { padding:8px 16px; font-size:13px; }
+  .divider { text-align:center; color:var(--text2); font-size:13px; margin:20px 0; position:relative; }
+  .divider::before,.divider::after { content:''; position:absolute; top:50%; width:43%; height:1px; background:var(--border); }
+  .divider::before { left:0; } .divider::after { right:0; }
+  .room-code-input { font-family:var(--font-display); letter-spacing:4px; font-size:22px; text-transform:uppercase; text-align:center; }
+
+  /* SETUP */
+  #setup { padding:0; }
+  .setup-body { flex:1; display:flex; overflow:hidden; }
+  .setup-panel { flex:1; padding:28px; overflow-y:auto; }
+  .setup-panel+.setup-panel { border-left:1px solid var(--border); max-width:300px; flex-shrink:0; }
+  .panel-title { font-family:var(--font-display); font-size:20px; color:var(--accent); letter-spacing:2px; margin-bottom:16px; }
+  .actor-search { display:flex; gap:10px; margin-bottom:16px; }
+  .actor-search input { flex:1; padding:10px 14px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:var(--font-body); font-size:14px; outline:none; }
+  .actor-search input:focus { border-color:var(--accent); }
+  .actor-results { display:grid; grid-template-columns:repeat(auto-fill,minmax(95px,1fr)); gap:10px; margin-bottom:16px; }
+  .actor-card { background:var(--bg3); border:2px solid transparent; border-radius:var(--radius); padding:10px; cursor:pointer; transition:all 0.15s; text-align:center; }
+  .actor-card:hover { border-color:rgba(232,200,74,0.4); }
+  .actor-card.selected { border-color:var(--accent); }
+  .actor-card img { width:60px; height:60px; border-radius:50%; object-fit:cover; margin:0 auto 6px; display:block; background:var(--bg2); }
+  .actor-card .actor-name { font-size:11px; font-weight:600; }
+  .selected-actor { display:flex; align-items:center; gap:14px; padding:12px; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--accent); margin-bottom:20px; }
+  .selected-actor img { width:44px; height:44px; border-radius:50%; object-fit:cover; }
+  .cat-list { display:flex; flex-direction:column; gap:7px; margin-bottom:20px; }
+  .cat-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg3); border:2px solid transparent; border-radius:var(--radius); cursor:pointer; transition:all 0.15s; }
+  .cat-item:hover { border-color:rgba(232,200,74,0.3); }
+  .cat-item.selected { border-color:var(--accent); background:rgba(232,200,74,0.06); }
+  .cat-check { width:18px; height:18px; border-radius:4px; border:2px solid var(--text2); display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0; font-size:12px; }
+  .cat-item.selected .cat-check { background:var(--accent); border-color:var(--accent); color:#0a0a0f; }
+  .cat-label { font-size:14px; font-weight:500; }
+  .cat-desc { font-size:11px; color:var(--text2); margin-top:2px; }
+  .players-list { display:flex; flex-direction:column; gap:7px; margin-bottom:16px; }
+  .player-row { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--border); }
+  .player-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .player-row span { flex:1; font-size:14px; }
+  .badge { font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px; background:var(--accent); color:#0a0a0f; }
+  .room-code-display { font-family:var(--font-display); font-size:52px; color:var(--accent); letter-spacing:8px; text-align:center; padding:18px; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:8px; }
+  .room-code-hint { text-align:center; font-size:12px; color:var(--text2); margin-bottom:20px; }
+
+  /* DRAFT */
+  #draft { overflow:hidden; height:100vh; }
+  .draft-layout { display:flex; flex:1; overflow:hidden; height:calc(100vh - 65px); }
+  .draft-sidebar { width:250px; background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; overflow:hidden; }
+  .sidebar-section { padding:14px 16px; border-bottom:1px solid var(--border); }
+  .sidebar-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1.5px; color:var(--text2); margin-bottom:8px; }
+  .turn-indicator { padding:12px; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--accent); }
+  .turn-name { font-family:var(--font-display); font-size:22px; color:var(--accent); letter-spacing:1px; }
+  .turn-sub { font-size:12px; color:var(--text2); margin-top:2px; }
+  .pick-badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; margin-top:6px; background:var(--accent); color:#0a0a0f; }
+  .draft-order-list { display:flex; flex-direction:column; gap:3px; overflow-y:auto; flex:1; padding:10px; }
+  .order-item { display:flex; align-items:center; gap:7px; padding:5px 8px; border-radius:6px; font-size:12px; }
+  .order-item.current { background:rgba(232,200,74,0.1); }
+  .order-item.done { opacity:0.3; }
+  .order-num { width:20px; font-size:10px; color:var(--text2); text-align:right; flex-shrink:0; }
+  .order-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .order-name { flex:1; font-weight:500; }
+  .order-cat { font-size:10px; color:var(--text2); }
+  .draft-main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .draft-board { flex:1; overflow-y:auto; padding:16px; }
+  .board-grid { display:grid; gap:14px; }
+  .player-column { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+  .player-col-header { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .player-col-dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .player-col-name { font-family:var(--font-display); font-size:18px; letter-spacing:1px; }
+  .player-col-picks { font-size:11px; color:var(--text2); margin-left:auto; }
+  .pick-slots { padding:8px; display:flex; flex-direction:column; gap:5px; }
+  .pick-slot { padding:9px 12px; border-radius:var(--radius); border:1px dashed rgba(232,200,74,0.15); min-height:58px; display:flex; flex-direction:column; gap:3px; }
+  .pick-slot.filled { border-style:solid; border-color:var(--border); background:var(--bg3); }
+  .pick-slot.active-slot { border-style:solid; border-color:var(--accent); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{border-color:var(--accent)}50%{border-color:rgba(232,200,74,0.3)} }
+  .slot-cat-label { font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text2); }
+  .slot-movie-title { font-size:13px; font-weight:600; }
+  .slot-movie-year { font-size:10px; color:var(--text2); }
+  .slot-empty-hint { font-size:11px; color:var(--text2); opacity:0.45; margin-top:auto; }
+  .draft-picker { border-top:1px solid var(--border); background:var(--bg2); padding:14px 18px; flex-shrink:0; }
+  .picker-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .picker-title { font-family:var(--font-display); font-size:18px; letter-spacing:1px; }
+  .picker-cat { font-size:13px; color:var(--accent); font-weight:600; }
+  .movie-search { display:flex; gap:10px; margin-bottom:10px; }
+  .movie-search input { flex:1; padding:9px 14px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:var(--font-body); font-size:14px; outline:none; }
+  .movie-search input:focus { border-color:var(--accent); }
+  .movie-results { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; min-height:150px; }
+  .movie-card { flex-shrink:0; width:88px; background:var(--bg3); border:2px solid transparent; border-radius:var(--radius); cursor:pointer; transition:all 0.15s; overflow:hidden; }
+  .movie-card:hover { border-color:var(--accent); }
+  .movie-card img { width:100%; height:118px; object-fit:cover; display:block; background:var(--bg2); }
+  .movie-card-info { padding:5px 6px; }
+  .movie-card-title { font-size:10px; font-weight:600; line-height:1.3; }
+  .movie-card-year { font-size:10px; color:var(--text2); }
+  .not-your-turn { text-align:center; padding:20px; color:var(--text2); font-size:14px; }
+  .waiting-name { font-family:var(--font-display); font-size:22px; color:var(--accent); letter-spacing:1px; margin:4px 0; }
+
+  /* AI PANEL */
+  .ai-panel { width:290px; background:var(--bg2); border-left:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; overflow:hidden; }
+  .ai-header { padding:13px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+  .ai-icon { width:26px; height:26px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+  .ai-title { font-family:var(--font-display); font-size:15px; letter-spacing:1px; color:var(--accent); }
+  .ai-messages { flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; }
+  .ai-bubble { padding:9px 12px; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--border); font-size:12px; line-height:1.6; }
+  .ai-bubble.user { background:rgba(232,200,74,0.07); border-color:rgba(232,200,74,0.3); }
+  .ai-bubble-label { font-size:9px; color:var(--text2); margin-bottom:3px; font-weight:600; text-transform:uppercase; letter-spacing:1px; }
+  .ai-quick { padding:0 10px 8px; display:flex; flex-wrap:wrap; gap:5px; }
+  .ai-quick-btn { padding:4px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:20px; color:var(--text2); font-size:10px; cursor:pointer; font-family:var(--font-body); transition:all 0.15s; }
+  .ai-quick-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .ai-input-row { padding:10px; border-top:1px solid var(--border); display:flex; gap:7px; }
+  .ai-input-row input { flex:1; padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:var(--font-body); font-size:12px; outline:none; }
+  .ai-input-row input:focus { border-color:var(--accent); }
+  .ai-thinking { display:flex; gap:4px; align-items:center; padding:8px 4px; }
+  .ai-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:bounce 1.2s infinite; }
+  .ai-dot:nth-child(2){animation-delay:0.2s} .ai-dot:nth-child(3){animation-delay:0.4s}
+  @keyframes bounce { 0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)} }
+
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--bg2); border:1px solid var(--accent); color:var(--text); padding:10px 22px; border-radius:var(--radius); font-size:13px; font-weight:500; z-index:999; opacity:0; transition:opacity 0.3s; pointer-events:none; white-space:nowrap; }
+  .toast.show { opacity:1; }
+  .version { position:fixed; bottom:8px; right:12px; font-size:10px; color:var(--text2); opacity:0.4; z-index:100; }
+
+  ::-webkit-scrollbar{width:4px;height:4px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  @media(max-width:900px){.ai-panel{display:none}}
+  @media(max-width:650px){.draft-sidebar{display:none}.board-grid{grid-template-columns:1fr!important}}
+</style>
+</head>
+<body>
+
+<!-- LOBBY -->
+<div id="lobby" class="screen active">
+  <div class="lobby-card">
+    <div class="lobby-title">MOVIE<span style="color:var(--text2)">DRAFT</span></div>
+    <div class="lobby-sub">The ultimate actor filmography draft game</div>
+    <div class="field-group">
+      <label>Your Name</label>
+      <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+    </div>
+    <button class="btn btn-primary" id="createBtn" disabled>Create New Draft Room</button>
+    <div class="divider">or join existing</div>
+    <div class="field-group">
+      <label>Room Code</label>
+      <input type="text" id="joinCode" class="room-code-input" placeholder="XXXX" maxlength="4">
+    </div>
+    <button class="btn btn-primary" id="joinBtn" disabled>Join Room</button>
+    <div id="appStatus" style="text-align:center;margin-top:14px;font-size:12px;color:var(--text2)">Loading...</div>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div id="setup" class="screen">
+  <div class="app-header">
+    <div class="logo">MOVIE<span>DRAFT</span></div>
+    <div class="header-room">Room <strong id="setupRoomCode"></strong></div>
+    <button class="btn btn-secondary btn-sm" id="copyCodeBtn" style="margin-left:10px">Copy Code</button>
+  </div>
+  <div class="setup-body">
+    <div class="setup-panel" id="hostPanel">
+      <div class="panel-title">SELECT ACTOR</div>
+      <div class="actor-search">
+        <input type="text" id="actorSearchInput" placeholder="Search for an actor...">
+        <button class="btn btn-secondary btn-sm" id="actorSearchBtn">Search</button>
+      </div>
+      <div id="actorResults" class="actor-results"></div>
+      <div id="selectedActorDisplay" style="display:none"></div>
+      <div class="panel-title" style="margin-top:24px">DRAFT CATEGORIES</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Select the categories each player must fill</div>
+      <div class="cat-list" id="catList"></div>
+    </div>
+    <div class="setup-panel">
+      <div class="panel-title">ROOM CODE</div>
+      <div class="room-code-display" id="setupRoomCodeBig"></div>
+      <div class="room-code-hint">Share this with your friends</div>
+      <div class="panel-title">PLAYERS</div>
+      <div class="players-list" id="playersList"></div>
+      <div id="hostControls" style="display:none">
+        <p style="font-size:11px;color:var(--text2);margin-bottom:8px">Need 2+ players, an actor, and 1+ category</p>
+        <button class="btn btn-primary" id="startDraftBtn" disabled>Start Draft</button>
+      </div>
+      <div id="guestWaiting" style="display:none;text-align:center;padding:20px;color:var(--text2);font-size:13px">
+        Waiting for host to start...
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DRAFT -->
+<div id="draft" class="screen">
+  <div class="app-header">
+    <div class="logo">MOVIE<span>DRAFT</span></div>
+    <div id="draftActorInfo" style="font-size:13px;color:var(--text2);margin-left:16px"></div>
+    <div class="header-room">Room <strong id="draftRoomCode"></strong></div>
+  </div>
+  <div class="draft-layout">
+    <div class="draft-sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Current Pick</div>
+        <div class="turn-indicator">
+          <div class="turn-name" id="currentTurnName">—</div>
+          <div class="turn-sub" id="currentTurnCat">Waiting...</div>
+          <div class="pick-badge" id="pickNumberBadge"></div>
+        </div>
+      </div>
+      <div class="sidebar-label" style="padding:12px 16px 4px">Draft Order</div>
+      <div class="draft-order-list" id="draftOrderList"></div>
+    </div>
+    <div class="draft-main">
+      <div class="draft-board">
+        <div class="board-grid" id="boardGrid"></div>
+      </div>
+      <div class="draft-picker">
+        <div id="myTurnUI" style="display:none">
+          <div class="picker-header">
+            <div>
+              <div class="picker-title">YOUR PICK</div>
+              <div class="picker-cat" id="pickerCatLabel"></div>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="browseAllBtn">Browse All Films</button>
+          </div>
+          <div class="movie-search">
+            <input type="text" id="movieSearchInput" placeholder="Search filmography...">
+          </div>
+          <div class="movie-results" id="movieResults"></div>
+        </div>
+        <div id="notMyTurnUI" class="not-your-turn" style="display:none">
+          <div style="font-size:12px;color:var(--text2)">Waiting for</div>
+          <div class="waiting-name" id="waitingForName">—</div>
+          <div style="font-size:12px;color:var(--text2)">to make their pick</div>
+        </div>
+        <div id="draftCompleteUI" style="display:none;text-align:center;padding:22px">
+          <div style="font-family:var(--font-display);font-size:32px;color:var(--accent);letter-spacing:2px;margin-bottom:8px">DRAFT COMPLETE!</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Ask the AI Judge for a final verdict</div>
+          <button class="btn btn-primary" style="width:auto;padding:10px 28px" id="finalVerdictBtn">Get Final Verdict</button>
+        </div>
+      </div>
+    </div>
+    <div class="ai-panel">
+      <div class="ai-header">
+        <div class="ai-icon">🎬</div>
+        <div class="ai-title">AI JUDGE</div>
+      </div>
+      <div class="ai-messages" id="aiMessages">
+        <div class="ai-bubble">
+          <div class="ai-bubble-label">Judge Claude</div>
+          Welcome to MovieDraft! I'll evaluate picks, settle disputes, and deliver verdicts. Ask me anything once the draft begins!
+        </div>
+      </div>
+      <div class="ai-quick">
+        <button class="ai-quick-btn" data-q="Rate the last pick made">Rate last pick</button>
+        <button class="ai-quick-btn" data-q="Who is winning the draft so far?">Who's winning?</button>
+        <button class="ai-quick-btn" data-q="Which pick has been most surprising?">Most surprising?</button>
+        <button class="ai-quick-btn" data-q="Settle a dispute about the last pick">Settle dispute</button>
+      </div>
+      <div class="ai-input-row">
+        <input type="text" id="aiInput" placeholder="Ask the judge...">
+        <button class="btn btn-secondary btn-sm" id="aiSendBtn">Ask</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="version">v1.03</div>
+
+<script>
+const TMDB_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmYzU5ZDY2ZGZmZTgxYmFkOWFhYzk0MGNjZGRlODRmOCIsIm5iZiI6MTc3Nzc2NTk5OS4yMjcsInN1YiI6IjY5ZjY4ZTZmODUzYzMyZWVkNDYwYWFiMSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.gXiwY5_TAJrYcLsVxFw_4bBsAP0V4BHJDj34jZeXoG0';
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+const TMDB_IMG  = 'https://image.tmdb.org/t/p/w185';
+const FB_CONFIG = {
+  apiKey:"AIzaSyARAWOvMCxtV30z-1MQ3fQCxzTG6uNh0qE",
+  authDomain:"moviedraft-9338d.firebaseapp.com",
+  projectId:"moviedraft-9338d",
+  storageBucket:"moviedraft-9338d.firebasestorage.app",
+  messagingSenderId:"131329759232",
+  appId:"1:131329759232:web:9f92e661e6dec1861ce0e5",
+  databaseURL:"https://moviedraft-9338d-default-rtdb.firebaseio.com"
+};
+const PLAYER_COLORS = ['#e05090','#50a0e0','#50c878','#e0a050','#b050e0'];
+const ALL_CATEGORIES = [
+  {id:'best_perf',    label:'Best Performance',   desc:"Their finest acting moment"},
+  {id:'iconic_role',  label:'Most Iconic Role',    desc:"The role they'll be remembered for"},
+  {id:'hidden_gem',   label:'Hidden Gem',          desc:"Underrated and underappreciated"},
+  {id:'guilty',       label:'Guilty Pleasure',     desc:"Bad movie, love it anyway"},
+  {id:'early',        label:'Early Career Pick',   desc:"Before they were famous"},
+  {id:'box_office',   label:'Biggest Box Office',  desc:"Most commercially successful"},
+  {id:'personal_fav', label:'Personal Favorite',   desc:"Your all-time favorite"},
+  {id:'best_dir',     label:'Best Director Combo', desc:"Director elevated the performance"},
+  {id:'worst',        label:'Worst Movie',         desc:"The biggest dud in filmography"},
+  {id:'highlight',    label:'Career Highlight',    desc:"A defining career moment"},
+];
+
+// State
+var db, roomRef;
+var myId   = 'p_' + Math.random().toString(36).slice(2,8);
+var myName = '';
+var roomCode = '';
+var isHost = false;
+var gameState = null;
+var allFilmography = [];
+var selectedActor = null;
+var selectedCats  = [];
+var actorTimer    = null;
+var draftStarted  = false;
+
+function loadScript(src) {
+  return new Promise(function(res, rej) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = res;
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+function tmdbFetch(path) {
+  return fetch(TMDB_BASE + path, {headers:{Authorization:'Bearer '+TMDB_TOKEN}}).then(function(r){return r.json();});
+}
+
+// LOBBY
+function createRoom() {
+  myName = document.getElementById('playerName').value.trim();
+  if (!myName) { toast('Enter your name first'); return; }
+  roomCode = Math.random().toString(36).slice(2,6).toUpperCase();
+  isHost = true;
+  enterSetup();
+}
+
+function joinRoom() {
+  myName = document.getElementById('playerName').value.trim();
+  if (!myName) { toast('Enter your name first'); return; }
+  var code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if (code.length !== 4) { toast('Enter a 4-letter room code'); return; }
+  roomCode = code;
+  isHost = false;
+  db.ref('rooms/' + roomCode).once('value', function(snap) {
+    if (!snap.exists()) { toast('Room not found'); return; }
+    enterSetup();
+  });
+}
+
+// SETUP
+function enterSetup() {
+  roomRef = db.ref('rooms/' + roomCode);
+  document.getElementById('setupRoomCode').textContent    = roomCode;
+  document.getElementById('setupRoomCodeBig').textContent = roomCode;
+  document.getElementById('draftRoomCode').textContent    = roomCode;
+  document.getElementById('hostPanel').style.display      = isHost ? '' : 'none';
+  document.getElementById('hostControls').style.display   = isHost ? '' : 'none';
+  document.getElementById('guestWaiting').style.display   = isHost ? 'none' : '';
+  if (isHost) renderCategories();
+
+  roomRef.child('players/'+myId).set({name:myName, id:myId, joinedAt:Date.now()});
+  roomRef.child('players/'+myId).onDisconnect().remove();
+
+  roomRef.child('players').on('value', function(snap) {
+    renderPlayers(snap.val() || {});
+    checkCanStart(snap.val() || {});
+  });
+
+  roomRef.child('status').on('value', function(snap) {
+    if (snap.val() === 'playing' && !draftStarted) {
+      roomRef.once('value', function(s){ enterDraft(s.val()); });
+    }
+  });
+
+  showScreen('setup');
+}
+
+function renderPlayers(players) {
+  var list = document.getElementById('playersList');
+  list.innerHTML = '';
+  Object.values(players).sort(function(a,b){return a.joinedAt-b.joinedAt;}).forEach(function(p, i) {
+    var you  = p.id === myId ? '<span class="badge">You</span>' : '';
+    var host = (isHost && i===0) ? '<span class="badge" style="margin-left:4px">Host</span>' : '';
+    list.innerHTML += '<div class="player-row"><div class="player-dot" style="background:'+PLAYER_COLORS[i%5]+'"></div><span>'+p.name+'</span>'+you+host+'</div>';
+  });
+}
+
+function renderCategories() {
+  var html = '';
+  ALL_CATEGORIES.forEach(function(c) {
+    var sel = selectedCats.includes(c.id);
+    html += '<div class="cat-item'+(sel?' selected':'')+'" data-id="'+c.id+'">'
+      +'<div class="cat-check">'+(sel?'✓':'')+'</div>'
+      +'<div><div class="cat-label">'+c.label+'</div><div class="cat-desc">'+c.desc+'</div></div>'
+      +'</div>';
+  });
+  document.getElementById('catList').innerHTML = html;
+  document.querySelectorAll('.cat-item').forEach(function(el) {
+    el.onclick = function() {
+      var id = el.dataset.id;
+      if (selectedCats.includes(id)) {
+        selectedCats = selectedCats.filter(function(c){return c!==id;});
+      } else {
+        selectedCats.push(id);
+      }
+      renderCategories();
+      roomRef.child('players').once('value', function(s){ checkCanStart(s.val()||{}); });
+    };
+  });
+}
+
+function checkCanStart(players) {
+  var ok = Object.keys(players).length >= 2 && !!selectedActor && selectedCats.length > 0;
+  var btn = document.getElementById('startDraftBtn');
+  if (btn) btn.disabled = !ok;
+}
+
+function copyRoomCode() {
+  navigator.clipboard.writeText(roomCode).then(function(){ toast('Room code copied!'); });
+}
+
+// ACTOR SEARCH
+function searchActors() {
+  var q = document.getElementById('actorSearchInput').value.trim();
+  if (!q) return;
+  tmdbFetch('/search/person?query='+encodeURIComponent(q)).then(function(data) {
+    var el = document.getElementById('actorResults');
+    el.innerHTML = '';
+    (data.results||[]).slice(0,8).forEach(function(p) {
+      var card = document.createElement('div');
+      card.className = 'actor-card' + (selectedActor && selectedActor.id===p.id ? ' selected' : '');
+      card.innerHTML = '<img src="'+(p.profile_path ? TMDB_IMG+p.profile_path : '')+'" alt="'+p.name+'" onerror="this.style.visibility=\'hidden\'"><div class="actor-name">'+p.name+'</div>';
+      card.onclick = function(){ selectActor(p.id, p.name, p.profile_path||''); };
+      el.appendChild(card);
+    });
+  });
+}
+
+function selectActor(id, name, profilePath) {
+  selectedActor = {id:id, name:name, profilePath:profilePath};
+  document.getElementById('actorResults').innerHTML = '';
+  document.getElementById('actorSearchInput').value = '';
+  var disp = document.getElementById('selectedActorDisplay');
+  disp.style.display = '';
+  disp.innerHTML = '<div class="selected-actor">'
+    +'<img src="'+(profilePath ? TMDB_IMG+profilePath : '')+'" alt="'+name+'" onerror="this.style.display=\'none\'">'
+    +'<div><div style="font-weight:600;font-size:15px">'+name+'</div>'
+    +'<div id="filmCount" style="font-size:12px;color:var(--text2)">Loading filmography...</div></div></div>';
+  tmdbFetch('/person/'+id+'/movie_credits').then(function(data) {
+    allFilmography = (data.cast||[]).filter(function(m){ return m.release_date && m.poster_path; })
+      .sort(function(a,b){ return new Date(b.release_date)-new Date(a.release_date); });
+    document.getElementById('filmCount').textContent = allFilmography.length + ' films in filmography';
+    roomRef.child('players').once('value', function(s){ checkCanStart(s.val()||{}); });
+  });
+}
+
+// START DRAFT
+function startDraft() {
+  roomRef.child('players').once('value', function(snap) {
+    var players = Object.values(snap.val()||{}).sort(function(a,b){return a.joinedAt-b.joinedAt;});
+    var cats = selectedCats.map(function(id){ return ALL_CATEGORIES.find(function(c){return c.id===id;}); });
+    var order = buildSnakeOrder(players, cats);
+    roomRef.set({
+      actor: selectedActor,
+      filmography: allFilmography.slice(0,100),
+      players: players,
+      categories: cats,
+      draftOrder: order,
+      currentPickIndex: 0,
+      picks: {},
+      status: 'playing'
+    });
+  });
+}
+
+function buildSnakeOrder(players, cats) {
+  var order = [];
+  cats.forEach(function(cat, r) {
+    var row = r%2===0 ? players.slice() : players.slice().reverse();
+    row.forEach(function(p) {
+      order.push({playerId:p.id, playerIndex:players.indexOf(p), catId:cat.id, catLabel:cat.label});
+    });
+  });
+  return order;
+}
+
+// ENTER DRAFT
+function enterDraft(data) {
+  if (!data || draftStarted) return;
+  draftStarted = true;
+  gameState = data;
+  allFilmography = data.filmography || [];
+  document.getElementById('draftActorInfo').textContent = 'Actor: ' + (data.actor?.name||'');
+  document.getElementById('boardGrid').style.gridTemplateColumns = 'repeat('+Math.min(data.players.length,3)+',1fr)';
+  renderBoard(); renderSidebar(); updatePickerUI();
+
+  roomRef.on('value', function(snap) {
+    var s = snap.val(); if (!s) return;
+    gameState = s; allFilmography = s.filmography||[];
+    renderBoard(); renderSidebar(); updatePickerUI();
+  });
+
+  showScreen('draft');
+  setTimeout(function(){
+    addAIMessage('Draft is live! Picking from <strong>'+data.actor.name+'</strong>\'s filmography. '+data.players.length+' players, '+data.categories.length+' categories each. Good luck!');
+  }, 600);
+}
+
+// BOARD
+function renderBoard() {
+  if (!gameState) return;
+  var players=gameState.players, categories=gameState.categories, picks=gameState.picks||{}, draftOrder=gameState.draftOrder, cur=gameState.currentPickIndex;
+  var grid = document.getElementById('boardGrid');
+  grid.innerHTML = '';
+  players.forEach(function(player, pi) {
+    var filled = Object.values(picks).filter(function(p){return p.playerId===player.id;}).length;
+    var col = document.createElement('div');
+    col.className = 'player-column';
+    col.innerHTML = '<div class="player-col-header">'
+      +'<div class="player-col-dot" style="background:'+PLAYER_COLORS[pi%5]+'"></div>'
+      +'<div class="player-col-name" style="color:'+PLAYER_COLORS[pi%5]+'">'+player.name+'</div>'
+      +'<div class="player-col-picks">'+filled+'/'+categories.length+'</div></div>'
+      +'<div class="pick-slots" id="slots_'+player.id+'"></div>';
+    grid.appendChild(col);
+    var slotsEl = col.querySelector('.pick-slots');
+    categories.forEach(function(cat) {
+      var pick = picks[player.id+'_'+cat.id];
+      var isActive = cur < draftOrder.length && draftOrder[cur].playerId===player.id && draftOrder[cur].catId===cat.id;
+      var slot = document.createElement('div');
+      slot.className = 'pick-slot'+(pick?' filled':'')+(isActive?' active-slot':'');
+      slot.innerHTML = '<div class="slot-cat-label">'+cat.label+'</div>';
+      if (pick) {
+        slot.innerHTML += '<div class="slot-movie-title">'+pick.title+'</div><div class="slot-movie-year">'+pick.year+'</div>';
+      } else {
+        slot.innerHTML += '<div class="slot-empty-hint">'+(isActive?'Picking now...':'Empty')+'</div>';
+      }
+      slotsEl.appendChild(slot);
+    });
+  });
+}
+
+// SIDEBAR
+function renderSidebar() {
+  if (!gameState) return;
+  var draftOrder=gameState.draftOrder, cur=gameState.currentPickIndex, players=gameState.players;
+  if (cur < draftOrder.length) {
+    var pick = draftOrder[cur];
+    document.getElementById('currentTurnName').textContent = players[pick.playerIndex]?.name||'—';
+    document.getElementById('currentTurnCat').textContent  = pick.catLabel;
+    document.getElementById('pickNumberBadge').textContent = 'Pick #'+(cur+1)+' of '+draftOrder.length;
+  } else {
+    document.getElementById('currentTurnName').textContent = 'Done!';
+    document.getElementById('currentTurnCat').textContent  = 'Draft complete';
+    document.getElementById('pickNumberBadge').textContent = '';
+  }
+  var list = document.getElementById('draftOrderList');
+  list.innerHTML = '';
+  draftOrder.forEach(function(pick, i) {
+    var player = players[pick.playerIndex];
+    var el = document.createElement('div');
+    el.className = 'order-item'+(i===cur?' current':'')+(i<cur?' done':'');
+    el.innerHTML = '<div class="order-num">'+(i+1)+'</div>'
+      +'<div class="order-dot" style="background:'+PLAYER_COLORS[pick.playerIndex%5]+'"></div>'
+      +'<div class="order-name">'+(player?.name||'?')+'</div>'
+      +'<div class="order-cat">'+pick.catLabel+'</div>';
+    list.appendChild(el);
+  });
+  var curEl = list.querySelector('.current');
+  if (curEl) curEl.scrollIntoView({block:'nearest'});
+}
+
+// PICKER
+function updatePickerUI() {
+  if (!gameState) return;
+  var cur=gameState.currentPickIndex, draftOrder=gameState.draftOrder, players=gameState.players;
+  var myTurn=document.getElementById('myTurnUI'), notMine=document.getElementById('notMyTurnUI'), done=document.getElementById('draftCompleteUI');
+  if (cur >= draftOrder.length) {
+    myTurn.style.display='none'; notMine.style.display='none'; done.style.display='';
+    return;
+  }
+  done.style.display = 'none';
+  var pick = draftOrder[cur];
+  var isMe = pick.playerId === myId;
+  myTurn.style.display  = isMe ? '' : 'none';
+  notMine.style.display = isMe ? 'none' : '';
+  if (isMe) {
+    document.getElementById('pickerCatLabel').textContent = pick.catLabel;
+    showAllFilms();
+  } else {
+    document.getElementById('waitingForName').textContent = players[pick.playerIndex]?.name||'?';
+  }
+}
+
+function showAllFilms() {
+  renderMovieCards(allFilmography.slice(0,40));
+}
+
+function filterMovies() {
+  var q = document.getElementById('movieSearchInput').value.toLowerCase();
+  renderMovieCards(allFilmography.filter(function(m){return m.title.toLowerCase().includes(q);}).slice(0,40));
+}
+
+function renderMovieCards(movies) {
+  var el = document.getElementById('movieResults');
+  el.innerHTML = '';
+  movies.forEach(function(m) {
+    var card = document.createElement('div');
+    card.className = 'movie-card';
+    card.innerHTML = '<img src="'+TMDB_IMG+m.poster_path+'" alt="'+m.title+'" onerror="this.style.background=\'var(--bg2)\'">'
+      +'<div class="movie-card-info"><div class="movie-card-title">'+m.title+'</div>'
+      +'<div class="movie-card-year">'+(m.release_date?m.release_date.slice(0,4):'')+'</div></div>';
+    card.onclick = function(){ makePick(m.id, m.title, m.release_date?m.release_date.slice(0,4):'', m.poster_path); };
+    el.appendChild(card);
+  });
+}
+
+function makePick(movieId, title, year, posterPath) {
+  if (!gameState) return;
+  var cur=gameState.currentPickIndex, draftOrder=gameState.draftOrder;
+  if (cur >= draftOrder.length) return;
+  var pick = draftOrder[cur];
+  if (pick.playerId !== myId) return;
+  var key = myId+'_'+pick.catId;
+  var pickData = {playerId:myId, movieId:movieId, title:title, year:year, posterPath:posterPath, catId:pick.catId, catLabel:pick.catLabel};
+  roomRef.child('picks/'+key).set(pickData);
+  roomRef.child('currentPickIndex').set(cur+1);
+  var me = gameState.players.find(function(p){return p.id===myId;});
+  addAIBubbleUser((me?me.name:'Someone')+' picked "'+title+'" ('+year+') for "'+pick.catLabel+'"');
+  callJudge((me?me.name:'Someone')+' just picked "'+title+'" ('+year+') for the "'+pick.catLabel+'" slot. Quick verdict?');
+}
+
+// AI JUDGE
+function addAIBubbleUser(msg) {
+  var el = document.getElementById('aiMessages');
+  var div = document.createElement('div');
+  div.className = 'ai-bubble user';
+  div.textContent = msg;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function addAIMessage(html) {
+  var el = document.getElementById('aiMessages');
+  var div = document.createElement('div');
+  div.className = 'ai-bubble';
+  div.innerHTML = '<div class="ai-bubble-label">Judge Claude</div>'+html;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function showThinking() {
+  var el = document.getElementById('aiMessages');
+  var div = document.createElement('div');
+  div.className = 'ai-thinking'; div.id = 'ai-thinking';
+  div.innerHTML = '<div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div>';
+  el.appendChild(div); el.scrollTop = el.scrollHeight;
+}
+
+function removeThinking() {
+  var t = document.getElementById('ai-thinking');
+  if (t) t.remove();
+}
+
+function sendToJudge() {
+  var input = document.getElementById('aiInput');
+  var msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  addAIBubbleUser(msg);
+  callJudge(msg);
+}
+
+function callJudge(userMessage) {
+  showThinking();
+  var actor = gameState && gameState.actor ? gameState.actor.name : 'unknown actor';
+  var picks = gameState ? (gameState.picks||{}) : {};
+  var players = gameState ? (gameState.players||[]) : [];
+  var ctx = '';
+  players.forEach(function(p) {
+    var pp = Object.values(picks).filter(function(pk){return pk.playerId===p.id;});
+    if (pp.length) ctx += '\n'+p.name+': '+pp.map(function(pk){return '"'+pk.title+'" ('+pk.year+') for "'+pk.catLabel+'"';}).join(', ');
+  });
+  fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-sonnet-4-20250514', max_tokens:300,
+      system:'You are a witty, opinionated AI judge for a movie draft game. Players are drafting films from '+actor+'\'s filmography. Be entertaining, give real opinions, keep it to 2-4 sentences. Current picks:'+(ctx||' None yet.'),
+      messages:[{role:'user', content:userMessage}]
+    })
+  }).then(function(r){return r.json();}).then(function(data) {
+    removeThinking();
+    addAIMessage(data.content&&data.content[0] ? data.content[0].text : "Hmm, couldn't reach my chamber. Try again!");
+  }).catch(function() {
+    removeThinking();
+    addAIMessage("Trouble connecting right now. Try again in a moment!");
+  });
+}
+
+function requestFinalVerdict() {
+  addAIBubbleUser('Give us your final draft verdict!');
+  var actor = gameState && gameState.actor ? gameState.actor.name : 'the actor';
+  var picks = gameState ? (gameState.picks||{}) : {};
+  var players = gameState ? (gameState.players||[]) : [];
+  var summary = '';
+  players.forEach(function(p) {
+    var pp = Object.values(picks).filter(function(pk){return pk.playerId===p.id;});
+    summary += '\n'+p.name+': '+pp.map(function(pk){return '"'+pk.title+'" for "'+pk.catLabel+'"';}).join(', ');
+  });
+  callJudge('The draft is over! All picks:'+summary+'\n\nGive a fun final verdict — who drafted best, which picks were bold or controversial, and declare a winner!');
+}
+
+// BOOT
+window.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM ready, loading Firebase...');
+  loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js')
+    .then(function(){
+      console.log('firebase-app loaded');
+      return loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js');
+    })
+    .then(function() {
+      console.log('firebase-database loaded, initializing...');
+      firebase.initializeApp(FB_CONFIG);
+      db = firebase.database();
+      console.log('Firebase ready. Binding UI...');
+      document.getElementById('createBtn').disabled = false;
+      document.getElementById('joinBtn').disabled   = false;
+      document.getElementById('appStatus').textContent = '';
+
+      document.getElementById('createBtn').onclick  = createRoom;
+      document.getElementById('joinBtn').onclick    = joinRoom;
+      document.getElementById('joinCode').onkeyup   = function(e){ if(e.key==='Enter') joinRoom(); };
+      document.getElementById('copyCodeBtn').onclick = copyRoomCode;
+      document.getElementById('actorSearchBtn').onclick = searchActors;
+      document.getElementById('actorSearchInput').onkeyup = function(e) {
+        clearTimeout(actorTimer);
+        actorTimer = setTimeout(searchActors, 500);
+      };
+      document.getElementById('startDraftBtn').onclick   = startDraft;
+      document.getElementById('browseAllBtn').onclick    = showAllFilms;
+      document.getElementById('movieSearchInput').onkeyup = filterMovies;
+      document.getElementById('finalVerdictBtn').onclick  = requestFinalVerdict;
+      document.getElementById('aiSendBtn').onclick = sendToJudge;
+      document.getElementById('aiInput').onkeyup   = function(e){ if(e.key==='Enter') sendToJudge(); };
+      document.querySelectorAll('.ai-quick-btn').forEach(function(btn) {
+        btn.onclick = function(){ addAIBubbleUser(btn.dataset.q); callJudge(btn.dataset.q); };
+      });
+      console.log('UI bound. App ready.');
+      document.getElementById('appStatus').textContent = '';
+    }).catch(function(err) {
+      console.error('Boot failed:', err);
+      document.getElementById('appStatus').textContent = 'Failed to load. Check your internet connection and refresh.';
+      document.getElementById('appStatus').style.color = '#e05050';
+    });
+});
+</script>
+</body>
+</html>
