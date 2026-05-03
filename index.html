@@ -297,7 +297,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div class="version">v1.03</div>
+<div class="version">v1.04</div>
 
 <script>
 const TMDB_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmYzU5ZDY2ZGZmZTgxYmFkOWFhYzk0MGNjZGRlODRmOCIsIm5iZiI6MTc3Nzc2NTk5OS4yMjcsInN1YiI6IjY5ZjY4ZTZmODUzYzMyZWVkNDYwYWFiMSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.gXiwY5_TAJrYcLsVxFw_4bBsAP0V4BHJDj34jZeXoG0';
@@ -371,7 +371,9 @@ function createRoom() {
   if (!myName) { toast('Enter your name first'); return; }
   roomCode = Math.random().toString(36).slice(2,6).toUpperCase();
   isHost = true;
-  enterSetup();
+  db.ref('rooms/' + roomCode).set({ status: 'waiting', createdAt: Date.now() }, function() {
+    enterSetup();
+  });
 }
 
 function joinRoom() {
@@ -381,8 +383,8 @@ function joinRoom() {
   if (code.length !== 4) { toast('Enter a 4-letter room code'); return; }
   roomCode = code;
   isHost = false;
-  db.ref('rooms/' + roomCode).once('value', function(snap) {
-    if (!snap.exists()) { toast('Room not found'); return; }
+  db.ref('rooms/' + roomCode + '/createdAt').once('value', function(snap) {
+    if (!snap.exists()) { toast('Room not found - check the code'); return; }
     enterSetup();
   });
 }
