@@ -312,7 +312,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div class="version">v1.05</div>
+<div class="version">v1.06</div>
 
 <script>
 const TMDB_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmYzU5ZDY2ZGZmZTgxYmFkOWFhYzk0MGNjZGRlODRmOCIsIm5iZiI6MTc3Nzc2NTk5OS4yMjcsInN1YiI6IjY5ZjY4ZTZmODUzYzMyZWVkNDYwYWFiMSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.gXiwY5_TAJrYcLsVxFw_4bBsAP0V4BHJDj34jZeXoG0';
@@ -790,10 +790,10 @@ function requestFinalVerdict() {
 // BOOT
 window.addEventListener('DOMContentLoaded', function() {
   console.log('DOM ready, loading Firebase...');
-  loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js')
+  loadScript('https://cdn.jsdelivr.net/npm/firebase@10.12.0/compat/app.min.js')
     .then(function(){
       console.log('firebase-app loaded');
-      return loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js');
+      return loadScript('https://cdn.jsdelivr.net/npm/firebase@10.12.0/compat/database.min.js');
     })
     .then(function() {
       console.log('firebase-database loaded, initializing...');
